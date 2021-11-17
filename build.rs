@@ -53,21 +53,12 @@ fn main() {
     println!("cargo:rustc-link-lib=static=cdds-util");
 
     // Generate bindings
-    let mut bindgen_builder = bindgen::Builder::default()
+    let bindings = bindgen::Builder::default()
         .header("wrapper.h")
         .detect_include_paths(true)
-        //.clang_arg("--sysroot=/usr/lib/gcc/x86_64-linux-gnu/5/")
-        //.clang_arg("--sysroot=/usr/lib/llvm-3.9/lib/clang/3.9.1/")
-        .clang_arg("--sysroot=/usr/arm-linux-gnueabi/")
         .clang_arg(format!("-I{}", cyclonedds_include.to_str().unwrap()))
         .clang_arg(format!("-I{}", cyclocut_include.to_str().unwrap()))
-        .generate_comments(false);
-
-    if let Ok(sysroot) = std::env::var("CROSS_SYSROOT") {
-        bindgen_builder = bindgen_builder.clang_arg(format!("--sysroot={}", sysroot));
-    }
-
-    let bindings = bindgen_builder
+        .generate_comments(false)
         .generate()
         .expect("Unable to generate bindings");
 
