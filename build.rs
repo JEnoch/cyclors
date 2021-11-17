@@ -5,6 +5,8 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
+    let _ = env_logger::try_init();
+
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let mut dir_builder = std::fs::DirBuilder::new();
     dir_builder.recursive(true);
@@ -51,11 +53,21 @@ fn main() {
     println!("cargo:rustc-link-lib=static=cdds-util");
 
     // Generate bindings
-    let bindings = bindgen::Builder::default()
+    let mut bindgen_builder = bindgen::Builder::default()
         .header("wrapper.h")
+        .detect_include_paths(true)
+        //.clang_arg("--sysroot=/usr/lib/gcc/x86_64-linux-gnu/5/")
+        //.clang_arg("--sysroot=/usr/lib/llvm-3.9/lib/clang/3.9.1/")
+        .clang_arg("--sysroot=/usr/arm-linux-gnueabi/")
         .clang_arg(format!("-I{}", cyclonedds_include.to_str().unwrap()))
         .clang_arg(format!("-I{}", cyclocut_include.to_str().unwrap()))
-        .generate_comments(false)
+        .generate_comments(false);
+
+    if let Ok(sysroot) = std::env::var("CROSS_SYSROOT") {
+        bindgen_builder = bindgen_builder.clang_arg(format!("--sysroot={}", sysroot));
+    }
+
+    let bindings = bindgen_builder
         .generate()
         .expect("Unable to generate bindings");
 
